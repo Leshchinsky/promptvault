@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Prompt Vault v3.3 + Supabase</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div id="authScreen" style="display:none;">
+    <div class="auth-box">
+      <h2>Login</h2>
+
+      <input id="loginEmail" type="email" placeholder="Email" />
+      <input id="loginPassword" type="password" placeholder="Password" />
+
+      <button id="loginBtn" type="button">Login</button>
+      <button id="forgotPasswordBtn" type="button">Forgot password?</button>
+
+      <p id="authError" style="display:none; color:red;"></p>
+      <p id="authSuccess" style="display:none; color:green;"></p>
+    </div>
+  </div>
+
+  <div class="app">
+    <div class="desktop-only">
+      <section class="card hero">
+        <div>
+          <h1>Prompt Vault</h1>
+          <p>A simple app to store, search, tag, favorite, and export your prompts.</p>
+        </div>
+        <div class="hero-actions">
+          <button class="btn btn-primary" id="desktopNewBtn">+ New prompt</button>
+          <button class="btn" id="desktopExportBtn">Export</button>
+          <button class="btn" id="desktopImportBtn">Import</button>
+        </div>
+      </section>
+
+      <section class="desktop-grid">
+        <div class="card desktop-col">
+          <div class="desktop-col-header">
+            <div class="compact-toolbar">
+              <div class="search-wrap">
+                <span class="search-icon">⌕</span>
+                <input class="input search-input" id="desktopSearchInput" type="text" placeholder="Search prompts..." />
+              </div>
+              <select class="select" id="desktopCategoryFilter"></select>
+              <select class="select" id="desktopTagFilter"></select>
+            </div>
+            <div class="toolbar-bottom">
+              <div class="tiny-actions">
+                <select class="select" id="desktopSortFilter" style="width:auto; min-width:138px;"></select>
+                <button class="btn btn-sm btn-soft" id="desktopFavoriteFilterBtn">Favorites</button>
+                <button class="btn btn-sm" id="desktopRecentBtn">Recent</button>
+              </div>
+              <div class="counter" id="desktopPromptCount">0 prompts</div>
+            </div>
+          </div>
+          <div class="desktop-col-body">
+            <div class="list" id="desktopPromptList"></div>
+          </div>
+        </div>
+
+        <div class="card desktop-col">
+          <div class="desktop-col-header">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+              <div style="font-size:15px; color:#64748b; font-weight:600;">Preview / actions</div>
+              <div class="desktop-hint" id="statusHint">Connected</div>
+            </div>
+          </div>
+          <div class="desktop-col-body" id="desktopDetailsContainer"></div>
+        </div>
+      </section>
+    </div>
+
+    <div class="mobile-only">
+      <section class="mobile-screen active" id="mobileListScreen">
+        <div class="mobile-header">
+          <div class="card mobile-hero">
+            <h1>Prompt Vault</h1>
+            <p>Search, sort, favorite, and manage prompts without endless scrolling.</p>
+          </div>
+          <div class="card mobile-panel">
+            <div class="mobile-toolbar">
+              <div class="mobile-collapsed-top">
+                <div class="search-wrap" style="margin-bottom:0;">
+                  <span class="search-icon">⌕</span>
+                  <input class="input search-input" id="mobileSearchInput" type="text" placeholder="Search prompts..." />
+                </div>
+                <button class="mobile-filter-toggle" id="mobileFilterToggleBtn">Filters</button>
+              </div>
+              <div class="mobile-filter-box" id="mobileFilterBox">
+                <div class="mobile-filters">
+                  <select class="select" id="mobileCategoryFilter"></select>
+                  <select class="select" id="mobileSortFilter"></select>
+                </div>
+              </div>
+              <div class="mobile-chip-row" id="mobileQuickTabs"></div>
+              <div class="mobile-counter" id="mobilePromptCount">0 prompts</div>
+            </div>
+          </div>
+        </div>
+        <div class="mobile-list" id="mobilePromptList"></div>
+      </section>
+
+      <section class="mobile-screen" id="mobileDetailsScreen">
+        <div class="mobile-header">
+          <div class="card mobile-panel" style="display:flex; align-items:center; gap:10px;">
+            <button class="mobile-back-btn" id="mobileBackBtn">← Back</button>
+            <div style="font-size:15px; color:#64748b; font-weight:600;">Prompt details</div>
+          </div>
+        </div>
+        <div id="mobileDetailsContainer"></div>
+      </section>
+
+      <button class="fab" id="mobileFabBtn">+</button>
+
+      <nav class="bottom-nav">
+        <div class="bottom-nav-inner">
+          <button class="nav-btn active" data-nav="all"><span class="nav-ico">☰</span><span>All</span></button>
+          <button class="nav-btn" data-nav="favorites"><span class="nav-ico">★</span><span>Favorites</span></button>
+          <button class="nav-btn" data-nav="recent"><span class="nav-ico">◷</span><span>Recent</span></button>
+          <button class="nav-btn" data-nav="new"><span class="nav-ico">＋</span><span>New</span></button>
+        </div>
+      </nav>
+    </div>
+  </div>
+
+  <input class="hidden-input" type="file" id="importFileInput" accept="application/json" />
+
+  <div class="sheet-backdrop" id="actionSheetBackdrop">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <h3 class="sheet-title">Prompt actions</h3>
+      <div class="sheet-actions">
+        <button class="sheet-btn" id="sheetCopyBtn">Copy</button>
+        <button class="sheet-btn" id="sheetEditBtn">Edit</button>
+        <button class="sheet-btn" id="sheetFavoriteBtn">Favorite</button>
+        <button class="sheet-btn" id="sheetDuplicateBtn">Duplicate</button>
+        <button class="sheet-btn danger" id="sheetDeleteBtn">Delete</button>
+        <button class="sheet-btn" id="sheetCancelBtn">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="modalBackdrop"></div>
+  <div class="modal-wrap" id="modalWrap">
+    <div class="modal">
+      <div class="modal-top">
+        <div>
+          <h2 class="modal-title" id="modalTitle">New prompt</h2>
+          <p class="modal-subtitle">Supabase integrated. Optimistic UI enabled. Sorting can refresh from DB without killing the UX.</p>
+        </div>
+        <button class="icon-close" id="closeModalBtn">×</button>
+      </div>
+
+      <form id="promptForm">
+        <input type="hidden" id="promptId" />
+        <div class="form-grid">
+          <div class="field">
+            <label for="titleInput">Title</label>
+            <input class="input" id="titleInput" type="text" placeholder="Transcript to study text" required />
+          </div>
+
+          <div class="form-row">
+            <div class="field">
+              <label for="categoryInput">Category</label>
+              <input class="input" id="categoryInput" type="text" placeholder="University" />
+            </div>
+            <div class="field">
+              <label for="languageInput">Language</label>
+              <input class="input" id="languageInput" type="text" placeholder="polish" />
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="tagsInput">Tags</label>
+            <input class="input" id="tagsInput" type="text" placeholder="transcript, study, polish" />
+          </div>
+
+          <div class="field">
+            <label for="notesInput">Notes</label>
+            <textarea class="textarea" id="notesInput" placeholder="Main prompt for turning lecture transcripts into clean learning material."></textarea>
+          </div>
+
+          <div class="field">
+            <label for="promptInput">Prompt</label>
+            <textarea class="textarea prompt-textarea" id="promptInput" placeholder="Write the full prompt text here..." required></textarea>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <div class="modal-actions-left">
+            <button type="button" class="btn" id="modalDuplicateBtn">Duplicate</button>
+            <button type="button" class="btn btn-danger" id="modalDeleteBtn">Delete</button>
+          </div>
+          <div class="modal-actions-right">
+            <button type="button" class="btn" id="cancelModalBtn">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="saveBtn">Save prompt</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <script src="js/app.js" defer></script>
+</body>
+</html>
