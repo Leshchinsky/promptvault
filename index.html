@@ -1,0 +1,1274 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Prompt Vault</title>
+  <style>
+    :root {
+      --bg: #eef2f6;
+      --panel: #ffffff;
+      --panel-soft: #f8fafc;
+      --border: #d8e0ea;
+      --border-strong: #0f172a;
+      --text: #0f172a;
+      --muted: #64748b;
+      --primary: #0b1736;
+      --primary-2: #142452;
+      --danger: #ef4444;
+      --danger-soft: #fff5f5;
+      --tag: #eff3f8;
+      --shadow: 0 2px 8px rgba(15, 23, 42, 0.04), 0 18px 48px rgba(15, 23, 42, 0.06);
+      --radius-xl: 28px;
+      --radius-lg: 20px;
+      --radius-md: 16px;
+      --radius-sm: 12px;
+      --container: 1280px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      line-height: 1.45;
+    }
+
+    button, input, textarea, select {
+      font: inherit;
+    }
+
+    .app {
+      max-width: var(--container);
+      margin: 0 auto;
+      padding: 30px;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow);
+    }
+
+    .hero {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 32px;
+      margin-bottom: 28px;
+    }
+
+    .hero-title {
+      margin: 0;
+      font-size: 38px;
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+      font-weight: 800;
+    }
+
+    .hero-subtitle {
+      margin: 10px 0 0;
+      font-size: 18px;
+      color: #495b76;
+      max-width: 700px;
+    }
+
+    .hero-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      min-height: 56px;
+      padding: 0 24px;
+      border-radius: 22px;
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--text);
+      cursor: pointer;
+      transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease, background .18s ease;
+      font-size: 18px;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+      min-width: 190px;
+    }
+
+    .btn-danger {
+      color: var(--danger);
+      border-color: #f2a5a5;
+      background: #fff;
+    }
+
+    .btn-soft {
+      background: var(--panel-soft);
+    }
+
+    .btn-icon {
+      font-size: 24px;
+      line-height: 1;
+      margin-top: -1px;
+    }
+
+    .section {
+      padding: 26px;
+      margin-bottom: 28px;
+    }
+
+    .search-wrap {
+      position: relative;
+      margin-bottom: 16px;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 18px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #8da0b8;
+      font-size: 22px;
+      pointer-events: none;
+    }
+
+    .input, .select, .textarea {
+      width: 100%;
+      border: 1px solid #c9d4e3;
+      background: #fff;
+      color: var(--text);
+      border-radius: 20px;
+      padding: 18px 18px;
+      outline: none;
+      transition: border-color .18s ease, box-shadow .18s ease;
+    }
+
+    .search-input {
+      padding-left: 50px;
+      min-height: 62px;
+      font-size: 18px;
+    }
+
+    .input:focus, .select:focus, .textarea:focus {
+      border-color: #94a3b8;
+      box-shadow: 0 0 0 4px rgba(148, 163, 184, 0.12);
+    }
+
+    .filters {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .toolbar-line {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    .counter {
+      font-size: 18px;
+      color: #64748b;
+    }
+
+    .tiny-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .tiny-btn {
+      min-height: 44px;
+      padding: 0 16px;
+      border-radius: 14px;
+      font-size: 15px;
+    }
+
+    .list {
+      display: grid;
+      gap: 18px;
+    }
+
+    .prompt-item {
+      border: 1.5px solid var(--border);
+      border-radius: 24px;
+      padding: 22px;
+      background: #fff;
+      cursor: pointer;
+      transition: border-color .18s ease, transform .18s ease, box-shadow .18s ease;
+    }
+
+    .prompt-item:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 14px 30px rgba(15, 23, 42, 0.06);
+    }
+
+    .prompt-item.active {
+      border-color: var(--border-strong);
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+    }
+
+    .prompt-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 8px;
+    }
+
+    .prompt-title {
+      margin: 0;
+      font-size: 22px;
+      line-height: 1.2;
+      font-weight: 750;
+      letter-spacing: -0.02em;
+    }
+
+    .star-btn {
+      flex: 0 0 auto;
+      width: 36px;
+      height: 36px;
+      border: 0;
+      background: transparent;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 24px;
+      color: #64748b;
+      display: grid;
+      place-items: center;
+    }
+
+    .star-btn:hover {
+      background: #f5f7fb;
+    }
+
+    .star-btn.active {
+      color: #64748b;
+    }
+
+    .meta-row {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      flex-wrap: wrap;
+      color: #64748b;
+      font-size: 15px;
+      margin-bottom: 12px;
+    }
+
+    .meta-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .prompt-desc {
+      margin: 0;
+      color: #4b5f79;
+      font-size: 18px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .details-card {
+      padding: 30px;
+    }
+
+    .details-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 16px;
+    }
+
+    .details-title-wrap {
+      min-width: 0;
+    }
+
+    .details-title-line {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+
+    .details-title {
+      margin: 0;
+      font-size: 32px;
+      line-height: 1.08;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 40px;
+      padding: 0 14px;
+      border-radius: 999px;
+      background: var(--tag);
+      color: #334155;
+      font-size: 16px;
+      font-weight: 500;
+    }
+
+    .tag-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    .actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .content-box {
+      background: #f5f7fb;
+      border: 1px solid #d8e0ea;
+      border-radius: 24px;
+      padding: 24px 26px;
+      margin-bottom: 18px;
+    }
+
+    .content-label {
+      margin: 0 0 10px;
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .content-text {
+      margin: 0;
+      font-size: 18px;
+      color: #334155;
+      white-space: pre-wrap;
+      word-break: break-word;
+      line-height: 1.7;
+    }
+
+    .dates {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      padding-top: 4px;
+      color: #64748b;
+      font-size: 18px;
+    }
+
+    .empty {
+      padding: 56px 28px;
+      text-align: center;
+      color: #64748b;
+      font-size: 18px;
+      border: 1px dashed #c9d4e3;
+      border-radius: 24px;
+      background: #fbfcfe;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.32);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      z-index: 50;
+    }
+
+    .modal-backdrop.show {
+      display: flex;
+    }
+
+    .modal {
+      width: min(860px, 100%);
+      max-height: calc(100vh - 48px);
+      overflow: auto;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 28px;
+      box-shadow: 0 28px 90px rgba(15, 23, 42, 0.18);
+      padding: 28px;
+    }
+
+    .modal-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+
+    .modal-title {
+      margin: 0;
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+
+    .modal-subtitle {
+      margin: 8px 0 0;
+      color: #64748b;
+      font-size: 16px;
+    }
+
+    .icon-close {
+      width: 48px;
+      height: 48px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: #fff;
+      cursor: pointer;
+      font-size: 22px;
+    }
+
+    .form-grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .field {
+      display: grid;
+      gap: 8px;
+    }
+
+    .field label {
+      font-size: 15px;
+      font-weight: 650;
+      color: #334155;
+    }
+
+    .textarea {
+      min-height: 126px;
+      resize: vertical;
+    }
+
+    .textarea.prompt-textarea {
+      min-height: 240px;
+    }
+
+    .modal-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-top: 22px;
+      flex-wrap: wrap;
+    }
+
+    .modal-actions-right,
+    .modal-actions-left {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 22px;
+      right: 22px;
+      max-width: min(440px, calc(100vw - 32px));
+      background: #0f172a;
+      color: #fff;
+      padding: 16px 18px;
+      border-radius: 18px;
+      box-shadow: 0 24px 60px rgba(15, 23, 42, 0.26);
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(10px);
+      transition: opacity .2s ease, transform .2s ease;
+      z-index: 60;
+      font-size: 16px;
+    }
+
+    .toast.show {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0);
+    }
+
+    .hidden-input {
+      display: none;
+    }
+
+    @media (max-width: 980px) {
+      .app { padding: 18px; }
+      .hero {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .hero-actions {
+        justify-content: stretch;
+      }
+      .hero-actions .btn {
+        flex: 1 1 calc(50% - 8px);
+      }
+      .details-top {
+        flex-direction: column;
+      }
+      .actions {
+        justify-content: flex-start;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .app { padding: 12px; }
+      .hero,
+      .section,
+      .details-card,
+      .modal { padding: 18px; }
+      .hero-title { font-size: 28px; }
+      .hero-subtitle { font-size: 16px; }
+      .filters,
+      .form-row,
+      .dates {
+        grid-template-columns: 1fr;
+      }
+      .btn {
+        min-height: 52px;
+        border-radius: 18px;
+        font-size: 17px;
+        width: 100%;
+      }
+      .hero-actions {
+        display: grid;
+        grid-template-columns: 1fr;
+      }
+      .toolbar-line {
+        align-items: stretch;
+      }
+      .tiny-actions {
+        width: 100%;
+      }
+      .tiny-actions .btn {
+        width: auto;
+        flex: 1 1 100%;
+      }
+      .prompt-item { padding: 18px; }
+      .prompt-title { font-size: 20px; }
+      .prompt-desc,
+      .content-text,
+      .counter,
+      .dates { font-size: 16px; }
+      .details-title { font-size: 24px; }
+      .details-title-line,
+      .tag-row,
+      .actions { align-items: stretch; }
+      .actions .btn {
+        width: 100%;
+        justify-content: center;
+      }
+      .content-box {
+        padding: 18px;
+        border-radius: 20px;
+      }
+      .modal-top {
+        align-items: center;
+      }
+      .icon-close {
+        width: 42px;
+        height: 42px;
+      }
+      .modal-actions,
+      .modal-actions-right,
+      .modal-actions-left {
+        width: 100%;
+      }
+      .modal-actions-left .btn,
+      .modal-actions-right .btn {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <section class="card hero">
+      <div>
+        <h1 class="hero-title">Prompt Vault</h1>
+        <p class="hero-subtitle">A simple app to store, search, tag, favorite, and export your prompts.</p>
+      </div>
+      <div class="hero-actions">
+        <button class="btn btn-primary" id="newPromptBtn"><span class="btn-icon">+</span><span>New prompt</span></button>
+        <button class="btn" id="exportBtn"><span>⇩</span><span>Export</span></button>
+        <button class="btn" id="importBtn"><span>⇪</span><span>Import</span></button>
+      </div>
+    </section>
+
+    <section class="card section">
+      <div class="search-wrap">
+        <span class="search-icon">⌕</span>
+        <input class="input search-input" id="searchInput" type="text" placeholder="Search prompts..." />
+      </div>
+
+      <div class="filters">
+        <select class="select" id="categoryFilter"></select>
+        <select class="select" id="tagFilter"></select>
+        <button class="btn btn-soft" id="favoriteFilterBtn">Favorites only</button>
+      </div>
+
+      <div class="toolbar-line">
+        <div class="counter" id="promptCount">0 prompts</div>
+        <div class="tiny-actions">
+          <button class="btn tiny-btn" id="showAllBtn">Show all</button>
+          <button class="btn tiny-btn" id="loadDemoBtn">Load demo</button>
+          <button class="btn tiny-btn" id="clearAllBtn">Clear all</button>
+        </div>
+      </div>
+
+      <div class="list" id="promptList"></div>
+    </section>
+
+    <section class="card details-card" id="detailsContainer"></section>
+  </div>
+
+  <input class="hidden-input" type="file" id="importFileInput" accept="application/json" />
+
+  <div class="modal-backdrop" id="modalBackdrop">
+    <div class="modal">
+      <div class="modal-top">
+        <div>
+          <h2 class="modal-title" id="modalTitle">New prompt</h2>
+          <p class="modal-subtitle">CRUD уже работает локально. Потом сюда спокойно подключается Supabase.</p>
+        </div>
+        <button class="icon-close" id="closeModalBtn">×</button>
+      </div>
+
+      <form id="promptForm">
+        <input type="hidden" id="promptId" />
+        <div class="form-grid">
+          <div class="field">
+            <label for="titleInput">Title</label>
+            <input class="input" id="titleInput" type="text" placeholder="Transcript to study text" required />
+          </div>
+
+          <div class="form-row">
+            <div class="field">
+              <label for="categoryInput">Category</label>
+              <input class="input" id="categoryInput" type="text" placeholder="University" />
+            </div>
+            <div class="field">
+              <label for="languageInput">Language</label>
+              <input class="input" id="languageInput" type="text" placeholder="polish" />
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="tagsInput">Tags</label>
+            <input class="input" id="tagsInput" type="text" placeholder="transcript, study, polish" />
+          </div>
+
+          <div class="field">
+            <label for="notesInput">Notes</label>
+            <textarea class="textarea" id="notesInput" placeholder="Main prompt for turning lecture transcripts into clean learning material."></textarea>
+          </div>
+
+          <div class="field">
+            <label for="promptInput">Prompt</label>
+            <textarea class="textarea prompt-textarea" id="promptInput" placeholder="Write the full prompt text here..." required></textarea>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <div class="modal-actions-left">
+            <button type="button" class="btn" id="modalDuplicateBtn">Duplicate</button>
+            <button type="button" class="btn btn-danger" id="modalDeleteBtn">Delete</button>
+          </div>
+          <div class="modal-actions-right">
+            <button type="button" class="btn" id="cancelModalBtn">Cancel</button>
+            <button type="submit" class="btn btn-primary">Save prompt</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const STORAGE_KEY = 'prompt-vault-chatgpt-style-v2';
+
+    const el = {
+      promptList: document.getElementById('promptList'),
+      detailsContainer: document.getElementById('detailsContainer'),
+      promptCount: document.getElementById('promptCount'),
+      searchInput: document.getElementById('searchInput'),
+      categoryFilter: document.getElementById('categoryFilter'),
+      tagFilter: document.getElementById('tagFilter'),
+      favoriteFilterBtn: document.getElementById('favoriteFilterBtn'),
+      showAllBtn: document.getElementById('showAllBtn'),
+      loadDemoBtn: document.getElementById('loadDemoBtn'),
+      clearAllBtn: document.getElementById('clearAllBtn'),
+      exportBtn: document.getElementById('exportBtn'),
+      importBtn: document.getElementById('importBtn'),
+      importFileInput: document.getElementById('importFileInput'),
+      newPromptBtn: document.getElementById('newPromptBtn'),
+      modalBackdrop: document.getElementById('modalBackdrop'),
+      modalTitle: document.getElementById('modalTitle'),
+      closeModalBtn: document.getElementById('closeModalBtn'),
+      cancelModalBtn: document.getElementById('cancelModalBtn'),
+      modalDuplicateBtn: document.getElementById('modalDuplicateBtn'),
+      modalDeleteBtn: document.getElementById('modalDeleteBtn'),
+      promptForm: document.getElementById('promptForm'),
+      promptId: document.getElementById('promptId'),
+      titleInput: document.getElementById('titleInput'),
+      categoryInput: document.getElementById('categoryInput'),
+      languageInput: document.getElementById('languageInput'),
+      tagsInput: document.getElementById('tagsInput'),
+      notesInput: document.getElementById('notesInput'),
+      promptInput: document.getElementById('promptInput'),
+      toast: document.getElementById('toast')
+    };
+
+    const state = {
+      items: [],
+      selectedId: null,
+      search: '',
+      category: 'all',
+      tag: 'all',
+      favoritesOnly: false,
+      editingId: null
+    };
+
+    function uid() {
+      return crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random());
+    }
+
+    function now() {
+      return new Date().toISOString();
+    }
+
+    function formatDate(value) {
+      if (!value) return '-';
+      return new Intl.DateTimeFormat('en-GB', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      }).format(new Date(value)).replace(',', '');
+    }
+
+    function escapeHtml(str = '') {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function normalizeCsv(value) {
+      return value
+        .split(',')
+        .map(v => v.trim())
+        .filter(Boolean);
+    }
+
+    function serializeCsv(arr) {
+      return (arr || []).join(', ');
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.items));
+    }
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        state.items = raw ? JSON.parse(raw) : [];
+      } catch (e) {
+        state.items = [];
+      }
+      if (!state.selectedId && state.items[0]) {
+        state.selectedId = state.items[0].id;
+      }
+    }
+
+    function getCategories() {
+      const values = [...new Set(state.items.map(item => item.category).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+      return ['all', ...values];
+    }
+
+    function getTags() {
+      const values = [...new Set(state.items.flatMap(item => item.tags || []).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+      return ['all', ...values];
+    }
+
+    function renderFilters() {
+      const categoryOptions = getCategories().map(value => {
+        const label = value === 'all' ? 'All categories' : value;
+        return `<option value="${escapeHtml(value)}" ${state.category === value ? 'selected' : ''}>${escapeHtml(label)}</option>`;
+      }).join('');
+
+      const tagOptions = getTags().map(value => {
+        const label = value === 'all' ? 'All tags' : value;
+        return `<option value="${escapeHtml(value)}" ${state.tag === value ? 'selected' : ''}>${escapeHtml(label)}</option>`;
+      }).join('');
+
+      el.categoryFilter.innerHTML = categoryOptions;
+      el.tagFilter.innerHTML = tagOptions;
+      el.favoriteFilterBtn.textContent = state.favoritesOnly ? 'Favorites only: ON' : 'Favorites only';
+      el.favoriteFilterBtn.style.background = state.favoritesOnly ? '#edf2ff' : '#f8fafc';
+      el.favoriteFilterBtn.style.borderColor = state.favoritesOnly ? '#b7c5ff' : '#d8e0ea';
+    }
+
+    function filteredItems() {
+      const q = state.search.trim().toLowerCase();
+      return state.items.filter(item => {
+        const matchesSearch = !q || [
+          item.title,
+          item.notes,
+          item.prompt,
+          item.category,
+          item.language,
+          ...(item.tags || [])
+        ].join(' ').toLowerCase().includes(q);
+
+        const matchesCategory = state.category === 'all' || item.category === state.category;
+        const matchesTag = state.tag === 'all' || (item.tags || []).includes(state.tag);
+        const matchesFavorite = !state.favoritesOnly || item.favorite;
+        return matchesSearch && matchesCategory && matchesTag && matchesFavorite;
+      });
+    }
+
+    function selectedItem() {
+      return state.items.find(item => item.id === state.selectedId) || null;
+    }
+
+    function renderList() {
+      const items = filteredItems();
+      el.promptCount.textContent = `${items.length} ${items.length === 1 ? 'prompt' : 'prompts'}`;
+
+      if (!items.length) {
+        el.promptList.innerHTML = `<div class="empty">Nothing found. The filter might be too strict, or the vault is still empty.</div>`;
+        return;
+      }
+
+      el.promptList.innerHTML = items.map(item => `
+        <article class="prompt-item ${item.id === state.selectedId ? 'active' : ''}" data-id="${item.id}">
+          <div class="prompt-head">
+            <div>
+              <h3 class="prompt-title">${escapeHtml(item.title)}</h3>
+            </div>
+            <button class="star-btn ${item.favorite ? 'active' : ''}" data-favorite-id="${item.id}" title="Toggle favorite">${item.favorite ? '★' : '☆'}</button>
+          </div>
+          <div class="meta-row">
+            <span class="meta-chip">◫ ${escapeHtml(item.category || 'Other')}</span>
+            <span class="meta-chip">⌂ ${(item.tags || []).map(t => escapeHtml(t)).join(', ') || 'no tags'}</span>
+          </div>
+          <p class="prompt-desc">${escapeHtml(item.prompt)}</p>
+        </article>
+      `).join('');
+
+      el.promptList.querySelectorAll('.prompt-item').forEach(node => {
+        node.addEventListener('click', (event) => {
+          if (event.target.closest('.star-btn')) return;
+          state.selectedId = node.dataset.id;
+          render();
+        });
+      });
+
+      el.promptList.querySelectorAll('.star-btn').forEach(btn => {
+        btn.addEventListener('click', (event) => {
+          event.stopPropagation();
+          toggleFavorite(btn.dataset.favoriteId);
+        });
+      });
+    }
+
+    function renderDetails() {
+      const item = selectedItem();
+      if (!item) {
+        el.detailsContainer.innerHTML = `<div class="empty">Select a prompt to see details here.</div>`;
+        return;
+      }
+
+      el.detailsContainer.innerHTML = `
+        <div class="details-top">
+          <div class="details-title-wrap">
+            <div class="details-title-line">
+              <h2 class="details-title">${escapeHtml(item.title)}</h2>
+              ${item.favorite ? '<span class="badge">Favorite</span>' : ''}
+            </div>
+            <div class="tag-row">
+              <span class="badge">${escapeHtml(item.category || 'Other')}</span>
+              ${(item.tags || []).map(tag => `<span class="badge">#${escapeHtml(tag)}</span>`).join('')}
+              ${item.language ? `<span class="badge">${escapeHtml(item.language)}</span>` : ''}
+            </div>
+          </div>
+
+          <div class="actions">
+            <button class="btn" id="copyBtn">⧉ Copy</button>
+            <button class="btn" id="editBtn">✎ Edit</button>
+            <button class="btn" id="favBtn">${item.favorite ? '★ Unfavorite' : '☆ Favorite'}</button>
+            <button class="btn btn-danger" id="deleteBtn">🗑 Delete</button>
+          </div>
+        </div>
+
+        <div class="content-box">
+          <h3 class="content-label">Notes</h3>
+          <p class="content-text">${escapeHtml(item.notes || '-')}</p>
+        </div>
+
+        <div class="content-box">
+          <h3 class="content-label">Prompt</h3>
+          <p class="content-text">${escapeHtml(item.prompt)}</p>
+        </div>
+
+        <div class="dates">
+          <div>Created: ${escapeHtml(formatDate(item.createdAt))}</div>
+          <div>Updated: ${escapeHtml(formatDate(item.updatedAt))}</div>
+        </div>
+      `;
+
+      document.getElementById('copyBtn').addEventListener('click', () => copyPrompt(item.id));
+      document.getElementById('editBtn').addEventListener('click', () => openModal(item.id));
+      document.getElementById('favBtn').addEventListener('click', () => toggleFavorite(item.id));
+      document.getElementById('deleteBtn').addEventListener('click', () => deletePrompt(item.id));
+    }
+
+    function render() {
+      renderFilters();
+      renderList();
+      renderDetails();
+    }
+
+    function showToast(message) {
+      el.toast.textContent = message;
+      el.toast.classList.add('show');
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(() => el.toast.classList.remove('show'), 2200);
+    }
+
+    function openModal(id = null) {
+      state.editingId = id;
+      const item = state.items.find(x => x.id === id);
+      el.modalTitle.textContent = item ? 'Edit prompt' : 'New prompt';
+      el.promptId.value = item?.id || '';
+      el.titleInput.value = item?.title || '';
+      el.categoryInput.value = item?.category || '';
+      el.languageInput.value = item?.language || '';
+      el.tagsInput.value = serializeCsv(item?.tags || []);
+      el.notesInput.value = item?.notes || '';
+      el.promptInput.value = item?.prompt || '';
+      el.modalDeleteBtn.style.display = item ? 'inline-flex' : 'none';
+      el.modalDuplicateBtn.style.display = item ? 'inline-flex' : 'none';
+      el.modalBackdrop.classList.add('show');
+      setTimeout(() => el.titleInput.focus(), 40);
+    }
+
+    function closeModal() {
+      el.modalBackdrop.classList.remove('show');
+      state.editingId = null;
+      el.promptForm.reset();
+      el.promptId.value = '';
+    }
+
+    function savePrompt(event) {
+      event.preventDefault();
+      const title = el.titleInput.value.trim();
+      const prompt = el.promptInput.value.trim();
+      if (!title) {
+        showToast('Title is required.');
+        return;
+      }
+      if (!prompt) {
+        showToast('Prompt text is required.');
+        return;
+      }
+
+      const existing = state.items.find(item => item.id === el.promptId.value);
+      const payload = {
+        id: existing?.id || uid(),
+        title,
+        category: el.categoryInput.value.trim() || 'Other',
+        language: el.languageInput.value.trim(),
+        tags: normalizeCsv(el.tagsInput.value),
+        notes: el.notesInput.value.trim(),
+        prompt,
+        favorite: existing?.favorite || false,
+        createdAt: existing?.createdAt || now(),
+        updatedAt: now()
+      };
+
+      if (existing) {
+        state.items = state.items.map(item => item.id === existing.id ? payload : item);
+      } else {
+        state.items.unshift(payload);
+      }
+
+      state.selectedId = payload.id;
+      saveState();
+      closeModal();
+      render();
+      showToast(existing ? 'Prompt updated.' : 'Prompt created.');
+    }
+
+    function deletePrompt(id) {
+      const item = state.items.find(x => x.id === id);
+      if (!item) return;
+      const ok = confirm(`Delete prompt "${item.title}"?`);
+      if (!ok) return;
+      state.items = state.items.filter(x => x.id !== id);
+      if (state.selectedId === id) {
+        state.selectedId = state.items[0]?.id || null;
+      }
+      saveState();
+      closeModal();
+      render();
+      showToast('Prompt deleted.');
+    }
+
+    function duplicatePrompt(id) {
+      const item = state.items.find(x => x.id === id);
+      if (!item) return;
+      const copy = {
+        ...item,
+        id: uid(),
+        title: `${item.title} copy`,
+        favorite: false,
+        createdAt: now(),
+        updatedAt: now()
+      };
+      state.items.unshift(copy);
+      state.selectedId = copy.id;
+      saveState();
+      render();
+      closeModal();
+      showToast('Prompt duplicated.');
+    }
+
+    function toggleFavorite(id) {
+      state.items = state.items.map(item => item.id === id
+        ? { ...item, favorite: !item.favorite, updatedAt: now() }
+        : item
+      );
+      saveState();
+      render();
+    }
+
+    async function copyPrompt(id) {
+      const item = state.items.find(x => x.id === id);
+      if (!item) return;
+      try {
+        await navigator.clipboard.writeText(item.prompt);
+        showToast('Prompt copied.');
+      } catch {
+        showToast('Could not copy prompt.');
+      }
+    }
+
+    function exportPrompts() {
+      const blob = new Blob([JSON.stringify(state.items, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'prompt-vault-export.json';
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('JSON exported.');
+    }
+
+    function importPrompts(file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const parsed = JSON.parse(reader.result);
+          if (!Array.isArray(parsed)) throw new Error('Invalid JSON');
+          state.items = parsed.map(item => ({
+            id: item.id || uid(),
+            title: item.title || 'Untitled',
+            category: item.category || 'Other',
+            language: item.language || '',
+            tags: Array.isArray(item.tags) ? item.tags : [],
+            notes: item.notes || '',
+            prompt: item.prompt || item.content || '',
+            favorite: !!item.favorite,
+            createdAt: item.createdAt || now(),
+            updatedAt: item.updatedAt || now()
+          }));
+          state.selectedId = state.items[0]?.id || null;
+          saveState();
+          render();
+          showToast('Prompts imported.');
+        } catch {
+          showToast('Import failed. Invalid JSON format.');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function loadDemo() {
+      const stamp = now();
+      state.items = [
+        {
+          id: uid(),
+          title: 'Transcript to study text',
+          category: 'University',
+          language: 'polish',
+          tags: ['transcript', 'study', 'polish'],
+          notes: 'Main prompt for turning lecture transcripts into clean learning material.',
+          prompt: 'Przeksztalc wskazany transkrypt wykladu w pelnoprawny tekst dydaktyczny. Pracuj wylacznie na podstawie materialu, bez dodawania wiedzy zewnetrznej...',
+          favorite: true,
+          createdAt: stamp,
+          updatedAt: stamp
+        },
+        {
+          id: uid(),
+          title: 'Prompt for exam quiz',
+          category: 'University',
+          language: 'polish',
+          tags: ['quiz', 'exam'],
+          notes: 'Generates single-choice test questions from uploaded course material.',
+          prompt: 'Na podstawie materialu z tego projektu przygotuj 20 pytan testowych jednokrotnego wyboru...',
+          favorite: false,
+          createdAt: stamp,
+          updatedAt: stamp
+        }
+      ];
+      state.selectedId = state.items[0].id;
+      saveState();
+      render();
+      showToast('Demo prompts loaded.');
+    }
+
+    function clearAll() {
+      if (!state.items.length) return;
+      const ok = confirm('Delete all prompts?');
+      if (!ok) return;
+      state.items = [];
+      state.selectedId = null;
+      saveState();
+      render();
+      showToast('All prompts deleted.');
+    }
+
+    function bindEvents() {
+      el.searchInput.addEventListener('input', (e) => {
+        state.search = e.target.value;
+        renderList();
+      });
+
+      el.categoryFilter.addEventListener('change', (e) => {
+        state.category = e.target.value;
+        renderList();
+      });
+
+      el.tagFilter.addEventListener('change', (e) => {
+        state.tag = e.target.value;
+        renderList();
+      });
+
+      el.favoriteFilterBtn.addEventListener('click', () => {
+        state.favoritesOnly = !state.favoritesOnly;
+        render();
+      });
+
+      el.showAllBtn.addEventListener('click', () => {
+        state.search = '';
+        state.category = 'all';
+        state.tag = 'all';
+        state.favoritesOnly = false;
+        el.searchInput.value = '';
+        render();
+      });
+
+      el.loadDemoBtn.addEventListener('click', loadDemo);
+      el.clearAllBtn.addEventListener('click', clearAll);
+      el.newPromptBtn.addEventListener('click', () => openModal());
+      el.exportBtn.addEventListener('click', exportPrompts);
+      el.importBtn.addEventListener('click', () => el.importFileInput.click());
+      el.importFileInput.addEventListener('change', (e) => {
+        const file = e.target.files?.[0];
+        if (file) importPrompts(file);
+        e.target.value = '';
+      });
+
+      el.closeModalBtn.addEventListener('click', closeModal);
+      el.cancelModalBtn.addEventListener('click', closeModal);
+      el.modalBackdrop.addEventListener('click', (e) => {
+        if (e.target === el.modalBackdrop) closeModal();
+      });
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeModal();
+      });
+
+      el.promptForm.addEventListener('submit', savePrompt);
+      el.modalDeleteBtn.addEventListener('click', () => {
+        if (state.editingId) deletePrompt(state.editingId);
+      });
+      el.modalDuplicateBtn.addEventListener('click', () => {
+        if (state.editingId) duplicatePrompt(state.editingId);
+      });
+    }
+
+    function init() {
+      loadState();
+      bindEvents();
+      render();
+      if (!state.items.length) loadDemo();
+    }
+
+    init();
+
+    /*
+      Supabase next step:
+      1. Replace localStorage with async repository methods.
+      2. Suggested table: prompts(id uuid, title text, category text, language text,
+         tags text[], notes text, prompt text, favorite boolean, created_at timestamptz,
+         updated_at timestamptz).
+      3. Add auth + user_id if prompts should be private per user.
+      4. UI is already separated enough for painless integration.
+    */
+  </script>
+</body>
+</html>
