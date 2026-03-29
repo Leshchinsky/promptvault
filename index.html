@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="PromptVault">
+<title>PromptVault</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden}
+:root{
+  --bg:#0c0e14;--s1:#111318;--s2:#171a22;--s3:#1e2130;
+  --b1:#252a3a;--b2:#2e3450;--b3:#3a4160;
+  --t1:#f0f2ff;--t2:#9ba3c4;--t3:#4a5280;
+  --acc:#5d6bff;--acc2:#7b87ff;--accbg:rgba(93,107,255,0.1);
+  --g:#2dd4a0;--gbg:rgba(45,212,160,0.1);
+  --r:#ff5270;--rbg:rgba(255,82,112,0.1);
+  --y:#ffb547;--ybg:rgba(255,181,71,0.1);
+  --p:#c084fc;--pbg:rgba(192,132,252,0.1);
+  --rad:12px;--rad2:16px;--rad3:20px;
+}
+body{background:var(--bg);color:var(--t1);font-family:'Inter',sans-serif;font-size:14px}
+
+/* LOAD */
+#load{position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}
+.load-logo{font-size:28px;font-weight:600;letter-spacing:-1px}
+.load-logo span{color:var(--acc2)}
+.spinner{width:32px;height:32px;border:2px solid var(--b2);border-top-color:var(--acc);border-radius:50%;animation:spin 0.7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.load-sub{font-size:12px;color:var(--t3)}
+
+/* LAYOUT */
+#app{height:100dvh;display:flex;flex-direction:column;display:none}
+#app.on{display:flex}
+
+/* HEADER */
+.hdr{flex-shrink:0;background:rgba(12,14,20,0.95);backdrop-filter:blur(20px);border-bottom:0.5px solid var(--b1);padding:12px 16px;display:flex;align-items:center;gap:10px;z-index:10}
+.logo{font-size:18px;font-weight:600;letter-spacing:-0.5px;flex-shrink:0}
+.logo span{color:var(--acc2)}
+.search-wrap{flex:1;position:relative}
+.search-wrap input{width:100%;background:var(--s2);border:0.5px solid var(--b1);border-radius:var(--rad);padding:8px 12px 8px 34px;color:var(--t1);font-family:'Inter',sans-serif;font-size:13px;outline:none;transition:border-color 0.2s}
+.search-wrap input:focus{border-color:var(--acc)}
+.search-wrap input::placeholder{color:var(--t3)}
+.search-ico{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--t3);font-size:14px;pointer-events:none}
+.hdr-add{flex-shrink:0;background:var(--acc);border:none;border-radius:var(--rad);padding:8px 14px;color:#fff;font-family:'Inter',sans-serif;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;transition:all 0.2s}
+.hdr-add:active{transform:scale(0.96)}
+
+/* CONTENT */
+.content{flex:1;overflow:hidden;display:flex}
+
+/* SIDEBAR */
+.sidebar{flex-shrink:0;width:200px;background:var(--s1);border-right:0.5px solid var(--b1);display:flex;flex-direction:column;overflow:hidden}
+@media(max-width:600px){.sidebar{display:none}.sidebar.mob-open{display:flex;position:fixed;inset:0;z-index:50;width:100%}}
+.sidebar-hdr{padding:14px 14px 8px;font-size:10px;font-weight:600;letter-spacing:1.5px;color:var(--t3);text-transform:uppercase}
+.folders{flex:1;overflow-y:auto;padding:0 8px 8px}
+.folders::-webkit-scrollbar{display:none}
+.folder-item{display:flex;align-items:center;gap:8px;padding:8px 8px;border-radius:var(--rad);cursor:pointer;color:var(--t2);font-size:13px;transition:all 0.15s;margin-bottom:2px}
+.folder-item:hover{background:var(--s2);color:var(--t1)}
+.folder-item.active{background:var(--accbg);color:var(--acc2);font-weight:500}
+.folder-icon{font-size:14px;flex-shrink:0}
+.folder-count{margin-left:auto;font-size:11px;color:var(--t3);background:var(--s2);padding:1px 6px;border-radius:8px}
+.folder-item.active .folder-count{background:var(--accbg);color:var(--acc)}
+.sidebar-footer{padding:10px 8px;border-top:0.5px solid var(--b1)}
+.new-folder-btn{width:100%;background:none;border:0.5px dashed var(--b2);border-radius:var(--rad);padding:7px;color:var(--t3);font-family:'Inter',sans-serif;font-size:12px;cursor:pointer;transition:all 0.2s}
+.new-folder-btn:hover{border-color:var(--acc);color:var(--acc)}
+
+/* MAIN */
+.main{flex:1;overflow-y:auto;padding:14px}
+.main::-webkit-scrollbar{display:none}
+
+/* TOOLBAR */
+.toolbar{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.folder-label{font-size:16px;font-weight:600;flex:1}
+.sort-sel{background:var(--s2);border:0.5px solid var(--b1);border-radius:var(--rad);padding:5px 10px;color:var(--t2);font-family:'Inter',sans-serif;font-size:12px;outline:none;-webkit-appearance:none;cursor:pointer}
+.count-label{font-size:12px;color:var(--t3)}
+.mob-menu-btn{display:none;background:none;border:0.5px solid var(--b1);border-radius:var(--rad);padding:6px 10px;color:var(--t2);font-size:13px;cursor:pointer}
+@media(max-width:600px){.mob-menu-btn{display:block}}
+
+/* PROMPT CARDS */
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
+.pcard{background:var(--s1);border:0.5px solid var(--b1);border-radius:var(--rad2);padding:14px;cursor:pointer;transition:all 0.2s;position:relative}
+.pcard:hover{border-color:var(--b2);background:var(--s2);transform:translateY(-1px)}
+.pcard-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px}
+.pcard-title{font-size:14px;font-weight:500;color:var(--t1);line-height:1.3}
+.pcard-folder{font-size:10px;font-weight:500;padding:2px 7px;border-radius:6px;flex-shrink:0;text-transform:uppercase;letter-spacing:0.4px}
+.pcard-body{font-size:12px;color:var(--t2);line-height:1.5;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;font-family:'JetBrains Mono',monospace}
+.pcard-vars{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.var-badge{font-size:10px;background:var(--ybg);color:var(--y);padding:2px 7px;border-radius:6px;font-family:'JetBrains Mono',monospace}
+.pcard-footer{display:flex;align-items:center;gap:6px;margin-top:10px;padding-top:10px;border-top:0.5px solid var(--b1)}
+.use-count{font-size:11px;color:var(--t3);margin-right:auto}
+.copy-btn{background:var(--accbg);border:none;border-radius:8px;padding:5px 10px;color:var(--acc2);font-family:'Inter',sans-serif;font-size:11px;font-weight:500;cursor:pointer;transition:all 0.2s}
+.copy-btn:active{transform:scale(0.95)}
+.edit-btn-sm{background:none;border:0.5px solid var(--b1);border-radius:8px;padding:5px 8px;color:var(--t3);font-size:11px;cursor:pointer}
+.del-btn-sm{background:none;border:none;color:var(--t3);font-size:13px;cursor:pointer;padding:4px;border-radius:6px;transition:color 0.2s}
+.del-btn-sm:hover{color:var(--r)}
+
+/* EMPTY */
+.empty{text-align:center;padding:48px 20px;color:var(--t3)}
+.empty-icon{font-size:40px;margin-bottom:12px}
+.empty p{font-size:14px;line-height:1.6}
+
+/* MODAL */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:100;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.2s;backdrop-filter:blur(6px)}@media(min-width:600px){.overlay{align-items:center}}
+.overlay.open{opacity:1;pointer-events:all}
+.modal{background:var(--s1);border:0.5px solid var(--b2);border-radius:var(--rad3) var(--rad3) 0 0;width:100%;max-width:680px;padding:24px 24px max(24px,env(safe-area-inset-bottom));transform:translateY(100%);transition:transform 0.28s cubic-bezier(.32,.72,0,1);max-height:90dvh;overflow-y:auto;-webkit-overflow-scrolling:touch}@media(max-width:599px){.modal{max-height:90dvh;height:90dvh;display:flex;flex-direction:column}.modal>.fg,.modal>.save-btn,.modal>.cancel-btn,.modal>.modal-handle,.modal>.modal-title{flex-shrink:0}textarea.fi{flex:1;min-height:0!important}}@media(min-width:600px){.modal{border-radius:var(--rad3);transform:scale(0.95);max-height:90dvh}}@media(min-width:600px){.overlay.open .modal{transform:scale(1)}}
+.overlay.open .modal{transform:translateY(0)}
+.modal::-webkit-scrollbar{display:none}
+.modal-handle{width:36px;height:4px;background:var(--b2);border-radius:2px;margin:0 auto 18px}
+.modal-title{font-size:20px;font-weight:600;margin-bottom:20px;letter-spacing:-0.3px}
+.fg{margin-bottom:16px}
+.fl{display:block;font-size:11px;font-weight:500;letter-spacing:0.5px;color:var(--t2);margin-bottom:5px;text-transform:uppercase}
+.fi{width:100%;background:var(--s2);border:0.5px solid var(--b2);border-radius:var(--rad);padding:10px 12px;color:var(--t1);font-family:'Inter',sans-serif;font-size:14px;outline:none;transition:border-color 0.2s;-webkit-appearance:none}
+.fi:focus{border-color:var(--acc)}
+.fi::placeholder{color:var(--t3)}
+textarea.fi{min-height:260px;resize:vertical;font-family:'JetBrains Mono',monospace;font-size:13px;line-height:1.7}
+.var-hint{font-size:11px;color:var(--t3);margin-top:4px}
+.var-hint span{color:var(--y);font-family:'JetBrains Mono',monospace}
+.detected-vars{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;min-height:0}
+.save-btn{width:100%;padding:13px;border:none;border-radius:var(--rad);background:var(--acc);color:#fff;font-family:'Inter',sans-serif;font-size:15px;font-weight:500;cursor:pointer;transition:all 0.2s;margin-top:4px}
+.save-btn:active{transform:scale(0.98)}
+.cancel-btn{width:100%;padding:10px;border:0.5px solid var(--b2);border-radius:var(--rad);background:none;color:var(--t2);font-family:'Inter',sans-serif;font-size:13px;cursor:pointer;margin-top:6px}
+
+/* USE MODAL */
+.use-modal .modal{max-width:560px}
+.use-prompt-body{background:var(--s2);border:0.5px solid var(--b1);border-radius:var(--rad);padding:16px;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--t1);line-height:1.8;white-space:pre-wrap;word-break:break-word;max-height:280px;overflow-y:auto;margin-bottom:14px}
+.use-vars-section{margin-bottom:14px}
+.use-vars-title{font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px}
+.var-input-row{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.var-input-label{font-size:12px;color:var(--y);font-family:'JetBrains Mono',monospace;min-width:80px;flex-shrink:0}
+.var-input-field{flex:1;background:var(--s2);border:0.5px solid var(--b2);border-radius:var(--rad);padding:7px 10px;color:var(--t1);font-family:'Inter',sans-serif;font-size:13px;outline:none}
+.var-input-field:focus{border-color:var(--y)}
+.result-area{background:var(--s2);border:0.5px solid var(--b1);border-radius:var(--rad);padding:16px;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--t1);line-height:1.8;white-space:pre-wrap;word-break:break-word;max-height:240px;overflow-y:auto;margin-bottom:12px;position:relative}
+.result-area::-webkit-scrollbar{display:none}
+.copy-full-btn{width:100%;padding:12px;border:none;border-radius:var(--rad);background:var(--g);color:#0c0e14;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s}
+.copy-full-btn:active{transform:scale(0.98)}
+.copied-flash{display:none;text-align:center;font-size:13px;color:var(--g);margin-top:6px;font-weight:500}
+
+/* TOAST */
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(10px);background:var(--s2);border:0.5px solid var(--b2);padding:9px 20px;border-radius:20px;font-size:13px;font-weight:500;z-index:500;opacity:0;transition:all 0.25s;white-space:nowrap;pointer-events:none;color:var(--t1)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* FOLDER COLORS */
+.fc-study{background:rgba(93,107,255,0.12);color:#7b87ff}
+.fc-work{background:rgba(45,212,160,0.12);color:#2dd4a0}
+.fc-gestalt{background:rgba(192,132,252,0.12);color:#c084fc}
+.fc-default{background:rgba(155,163,196,0.12);color:#9ba3c4}
+</style>
+</head>
+<body>
+
+<!-- PIN SCREEN -->
+<div id="pinScreen" style="position:fixed;inset:0;background:#0c0e14;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center">
+  <div style="font-size:26px;font-weight:600;letter-spacing:-1px;margin-bottom:6px">Prompt<span style="color:#7b87ff">Vault</span></div>
+  <div style="font-size:13px;color:#4a5280;margin-bottom:32px" id="pinSub">Введи PIN для входа</div>
+  <div style="display:flex;gap:16px;margin-bottom:28px" id="pinDots">
+    <div id="pd0" style="width:14px;height:14px;border-radius:50%;border:2px solid #252a3a;transition:all 0.2s"></div>
+    <div id="pd1" style="width:14px;height:14px;border-radius:50%;border:2px solid #252a3a;transition:all 0.2s"></div>
+    <div id="pd2" style="width:14px;height:14px;border-radius:50%;border:2px solid #252a3a;transition:all 0.2s"></div>
+    <div id="pd3" style="width:14px;height:14px;border-radius:50%;border:2px solid #252a3a;transition:all 0.2s"></div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:252px">
+    <button onclick="pp('1')" style="height:62px;border-radius:14px;border:0.5px solid #1e2130;background:#111318;color:#e8eaf0;font-size:20px;font-weight:600;cursor:pointer">1</button>
+    <button onclick="pp('2')" style="height:62px;border-radius:14px;border:0.5px solid #1e2130;background:#111318;color:#e8eaf0;font-size:20px;font-weight:600;cursor:pointer">2</button>
+    <button onclick="pp('3')" style="height:62px;border-radius:14px;border:0.5px solid #1e2130;background:#111318;color:#e8eaf0;font-size:20px;font-weight:600;cursor:pointer">3</button>
+    <button onclick="pp('4')" style="height:62px;border-radius:14px;border:0.5px solid #1e2130;background:#111318;color:#e8eaf0;font-size:20px;font-weight:600;cursor:pointer">4</button>
+    <button onclick="pp('5')" style="height:62px;border-radius:14px;border:0.5px solid #1e2130;background:#111318;color:#e8eaf0;font-size:20px;font-weight:600;cursor:pointer">5</button>
+    <button onclick="pp('6')" style="height:62px;border-radius:14px;border:0.5px solid #1e2130;background:#111318;color:#e8eaf0;font-size:20px;font-weight:600;cursor:pointer">6</button>
+    <button onclick="pp('7')" style="height:62px;border-radius:14px;border:0.5px solid #1e2130;background:#111318;color:#e8eaf0;font-size:20px;font-weight:600;cursor:pointer">7</button>
+    <button onclick="pp('8')" style="height:62px;border-radius:14px;border:0.5px solid #1e2130;background:#111318;color:#e8eaf0;font-size:20px;font-weight:600;cursor:pointer">8</button>
+    <button onclick="pp('9')" style="height:62px;border-radius:14px;border:0.5px solid #1e2130;background:#111318;color:#e8eaf0;font-size:20px;font-weight:600;cursor:pointer">9</button>
+    <button style="visibility:hidden"></button>
+    <button onclick="pp('0')" style="height:62px;border-radius:14px;border:0.5px solid #1e2130;background:#111318;color:#e8eaf0;font-size:20px;font-weight:600;cursor:pointer">0</button>
+    <button onclick="pdel()" style="height:62px;border-radius:14px;border:0.5px solid #1e2130;background:#111318;color:#9ba3c4;font-size:14px;cursor:pointer">⌫</button>
+  </div>
+  <div id="pinHint" style="font-size:12px;color:#4a5280;margin-top:16px;min-height:16px"></div>
+</div>
+
+<div id="load">
+  <div class="load-logo">Prompt<span>Vault</span></div>
+  <div class="spinner"></div>
+  <div class="load-sub">Загрузка промптов...</div>
+</div>
+
+<div id="app">
+  <div class="hdr">
+    <button class="mob-menu-btn" onclick="toggleSidebar()">☰ Папки</button>
+    <div class="logo" style="display:none" id="desktopLogo">Prompt<span>Vault</span></div>
+    <div class="search-wrap">
+      <span class="search-ico">🔍</span>
+      <input type="text" id="searchInput" placeholder="Поиск промптов..." oninput="renderPrompts()">
+    </div>
+    <button class="hdr-add" onclick="openAdd()">+ Новый</button>
+  </div>
+
+  <div class="content">
+    <div class="sidebar" id="sidebar">
+      <div class="sidebar-hdr">Папки</div>
+      <div class="folders" id="foldersList"></div>
+      <div class="sidebar-footer">
+        <button class="new-folder-btn" onclick="createFolder()">+ Новая папка</button>
+      </div>
+    </div>
+
+    <div class="main">
+      <div class="toolbar">
+        <div class="folder-label" id="folderLabel">Все промпты</div>
+        <div class="count-label" id="countLabel"></div>
+        <select class="sort-sel" id="sortSel" onchange="renderPrompts()">
+          <option value="new">Сначала новые</option>
+          <option value="old">Сначала старые</option>
+          <option value="used">По использованию</option>
+          <option value="az">А → Я</option>
+        </select>
+      </div>
+      <div class="cards-grid" id="cardsGrid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ADD/EDIT MODAL -->
+<div class="overlay" id="addOv">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="addTitle">Новый промпт</div>
+    <div class="fg">
+      <label class="fl">Название</label>
+      <input class="fi" id="pTitle" placeholder="Например: Анализ конспекта">
+    </div>
+    <div class="fg">
+      <label class="fl">Папка</label>
+      <select class="fi" id="pFolder"></select>
+    </div>
+    <div class="fg">
+      <label class="fl">Промпт</label>
+      <textarea class="fi" id="pBody" placeholder="Введи текст промпта. Используй {{переменная}} для подстановки." oninput="detectVars()"></textarea>
+      <div class="var-hint">Переменные: <span>{{имя}}</span> — будут заменяться при использовании</div>
+      <div class="detected-vars" id="detectedVars"></div>
+    </div>
+    <input type="hidden" id="pEditId">
+    <button class="save-btn" onclick="savePrompt()">Сохранить</button>
+    <button class="cancel-btn" onclick="closeOv('addOv')">Отмена</button>
+  </div>
+</div>
+
+<!-- USE MODAL -->
+<div class="overlay use-modal" id="useOv">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="useTitle">Использовать промпт</div>
+    <div class="use-prompt-body" id="useBody"></div>
+    <div class="use-vars-section" id="useVarsSection" style="display:none">
+      <div class="use-vars-title">Заполни переменные</div>
+      <div id="useVarsList"></div>
+    </div>
+    <div id="useResultSection" style="display:none">
+      <div class="use-vars-title" style="margin-bottom:8px">Готовый промпт</div>
+      <div class="result-area" id="resultArea"></div>
+    </div>
+    <button class="copy-full-btn" id="copyFinalBtn" onclick="copyFinal()">📋 Скопировать промпт</button>
+    <div class="copied-flash" id="copiedFlash">✓ Скопировано!</div>
+    <button class="cancel-btn" onclick="closeOv('useOv')">Закрыть</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SB = 'https://xhhcclmwdxkkrrbqlkze.supabase.co';
+const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhoaGNjbG13ZHhra3JyYnFsa3plIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NzE1MjgsImV4cCI6MjA5MDA0NzUyOH0.7Eyt-poMCD40psl96EPZ6U1Vo1i_JPv7pg1L5muvWcw';
+const H = {'Content-Type':'application/json','apikey':KEY,'Authorization':'Bearer '+KEY};
+
+async function sbGet(t,q=''){const r=await fetch(`${SB}/rest/v1/${t}?${q}`,{headers:H});return r.json();}
+async function sbPost(t,d){const r=await fetch(`${SB}/rest/v1/${t}`,{method:'POST',headers:{...H,'Prefer':'return=representation'},body:JSON.stringify(d)});return r.json();}
+async function sbPatch(t,id,d){const r=await fetch(`${SB}/rest/v1/${t}?id=eq.${id}`,{method:'PATCH',headers:{...H,'Prefer':'return=representation'},body:JSON.stringify(d)});return r.json();}
+async function sbDelete(t,id){await fetch(`${SB}/rest/v1/${t}?id=eq.${id}`,{method:'DELETE',headers:H});}
+
+let prompts=[], folders=[], activeFolder='all', curPrompt=null;
+
+const DEFAULT_FOLDERS = ['Магистратура','IT / Работа','Гештальт'];
+const FOLDER_ICONS = {'Магистратура':'📚','IT / Работа':'💻','Гештальт':'🧠','Без папки':'📁'};
+const FOLDER_COLORS = {'Магистратура':'fc-study','IT / Работа':'fc-work','Гештальт':'fc-gestalt'};
+
+async function init(){
+  try {
+    prompts = await sbGet('prompts','order=created_at.desc');
+    if(!Array.isArray(prompts)) prompts=[];
+    buildFolders();
+    renderFolders();
+    renderPrompts();
+    document.getElementById('load').style.display='none';
+    document.getElementById('app').classList.add('on');
+  } catch(e){
+    document.querySelector('.load-sub').textContent='Ошибка подключения. Проверь интернет.';
+    setTimeout(init,3000);
+  }
+}
+
+function buildFolders(){
+  const set = new Set(DEFAULT_FOLDERS);
+  prompts.forEach(p=>set.add(p.folder));
+  folders = [...set];
+}
+
+function getFolderColor(f){return FOLDER_COLORS[f]||'fc-default';}
+function getFolderIcon(f){return FOLDER_ICONS[f]||'📁';}
+
+function renderFolders(){
+  const el = document.getElementById('foldersList');
+  const allCount = prompts.length;
+  let html = `<div class="folder-item ${activeFolder==='all'?'active':''}" onclick="setFolder('all')">
+    <span class="folder-icon">✨</span><span>Все промпты</span><span class="folder-count">${allCount}</span></div>`;
+  folders.forEach(f=>{
+    const cnt = prompts.filter(p=>p.folder===f).length;
+    html += `<div class="folder-item ${activeFolder===f?'active':''}" onclick="setFolder('${f.replace(/'/g,"\\'")}')">
+      <span class="folder-icon">${getFolderIcon(f)}</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f}</span>
+      <span class="folder-count">${cnt}</span></div>`;
+  });
+  el.innerHTML = html;
+}
+
+function setFolder(f){
+  activeFolder=f;
+  document.getElementById('folderLabel').textContent = f==='all'?'Все промпты':f;
+  renderFolders();
+  renderPrompts();
+  // close mobile sidebar
+  document.getElementById('sidebar').classList.remove('mob-open');
+}
+
+function getFiltered(){
+  const q = document.getElementById('searchInput').value.toLowerCase().trim();
+  const sort = document.getElementById('sortSel').value;
+  let res = prompts.filter(p=>{
+    const inFolder = activeFolder==='all' || p.folder===activeFolder;
+    const inSearch = !q || p.title.toLowerCase().includes(q) || p.body.toLowerCase().includes(q);
+    return inFolder && inSearch;
+  });
+  if(sort==='old') res.sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));
+  else if(sort==='used') res.sort((a,b)=>(b.use_count||0)-(a.use_count||0));
+  else if(sort==='az') res.sort((a,b)=>a.title.localeCompare(b.title));
+  else res.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+  return res;
+}
+
+function extractVars(body){
+  const matches = body.match(/\{\{([^}]+)\}\}/g)||[];
+  return [...new Set(matches.map(m=>m.replace(/\{\{|\}\}/g,'').trim()))];
+}
+
+function renderPrompts(){
+  const list = getFiltered();
+  document.getElementById('countLabel').textContent = list.length + ' промптов';
+  const grid = document.getElementById('cardsGrid');
+  if(!list.length){
+    grid.innerHTML = `<div class="empty" style="grid-column:1/-1">
+      <div class="empty-icon">✦</div>
+      <p>Промптов нет.<br>Нажми «+ Новый» чтобы добавить первый.</p></div>`;
+    return;
+  }
+  grid.innerHTML = list.map(p=>{
+    const vars = extractVars(p.body);
+    const varsBadges = vars.map(v=>`<span class="var-badge">{{${v}}}</span>`).join('');
+    const fc = getFolderColor(p.folder);
+    const fi = getFolderIcon(p.folder);
+    return `<div class="pcard" onclick="openUse(${p.id})">
+      <div class="pcard-top">
+        <div class="pcard-title">${esc(p.title)}</div>
+        <span class="pcard-folder ${fc}">${fi} ${esc(p.folder)}</span>
+      </div>
+      <div class="pcard-body">${esc(p.body)}</div>
+      ${vars.length?`<div class="pcard-vars">${varsBadges}</div>`:''}
+      <div class="pcard-footer">
+        <span class="use-count">Использован ${p.use_count||0}×</span>
+        <button class="copy-btn" onclick="event.stopPropagation();quickCopy(${p.id})">📋 Копировать</button>
+        <button class="edit-btn-sm" onclick="event.stopPropagation();openEdit(${p.id})">✏️</button>
+        <button class="del-btn-sm" onclick="event.stopPropagation();delPrompt(${p.id})">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+// ── ADD / EDIT ──────────────────────────────────────────────
+function openAdd(){
+  document.getElementById('pEditId').value='';
+  document.getElementById('pTitle').value='';
+  document.getElementById('pBody').value='';
+  document.getElementById('addTitle').textContent='Новый промпт';
+  populateFolderSelect();
+  detectVars();
+  openOv('addOv');
+}
+
+function openEdit(id){
+  const p = prompts.find(x=>x.id===id); if(!p) return;
+  document.getElementById('pEditId').value=id;
+  document.getElementById('pTitle').value=p.title;
+  document.getElementById('pBody').value=p.body;
+  document.getElementById('addTitle').textContent='Редактировать';
+  populateFolderSelect(p.folder);
+  detectVars();
+  openOv('addOv');
+}
+
+function populateFolderSelect(selected){
+  const sel = document.getElementById('pFolder');
+  const opts = [...folders];
+  if(!opts.includes('Без папки')) opts.push('Без папки');
+  sel.innerHTML = opts.map(f=>`<option value="${f}" ${f===(selected||activeFolder||'Без папки')?'selected':''}>${f}</option>`).join('');
+}
+
+function detectVars(){
+  const body = document.getElementById('pBody').value;
+  const vars = extractVars(body);
+  const el = document.getElementById('detectedVars');
+  el.innerHTML = vars.length
+    ? vars.map(v=>`<span class="var-badge">{{${v}}}</span>`).join('')
+    : '';
+}
+
+async function savePrompt(){
+  const title = document.getElementById('pTitle').value.trim();
+  const body = document.getElementById('pBody').value.trim();
+  const folder = document.getElementById('pFolder').value;
+  if(!title||!body){toast('⚠️ Заполни название и текст промпта');return;}
+  const vars = extractVars(body);
+  const eid = document.getElementById('pEditId').value;
+  try {
+    if(eid){
+      const u = await sbPatch('prompts',parseInt(eid),{title,body,folder,variables:vars,updated_at:new Date().toISOString()});
+      const i = prompts.findIndex(x=>x.id===parseInt(eid));
+      if(i>=0) prompts[i]={...prompts[i],...(Array.isArray(u)?u[0]:u)};
+      toast('✅ Сохранено');
+    } else {
+      const c = await sbPost('prompts',{title,body,folder,variables:vars,use_count:0});
+      prompts.unshift(Array.isArray(c)?c[0]:c);
+      toast('✅ Промпт добавлен!');
+    }
+    buildFolders(); renderFolders(); renderPrompts(); closeOv('addOv');
+  } catch(e){ toast('❌ Ошибка сохранения'); }
+}
+
+async function delPrompt(id){
+  if(!confirm('Удалить этот промпт?')) return;
+  await sbDelete('prompts',id);
+  prompts = prompts.filter(x=>x.id!==id);
+  buildFolders(); renderFolders(); renderPrompts();
+  toast('🗑️ Удалено');
+}
+
+// ── QUICK COPY (no vars) ──────────────────────────────────
+async function quickCopy(id){
+  const p = prompts.find(x=>x.id===id); if(!p) return;
+  try {
+    await navigator.clipboard.writeText(p.body);
+    toast('📋 Скопировано!');
+    await sbPatch('prompts',id,{use_count:(p.use_count||0)+1});
+    p.use_count=(p.use_count||0)+1;
+    renderPrompts();
+  } catch(e){ toast('❌ Не удалось скопировать'); }
+}
+
+// ── USE MODAL (with vars) ─────────────────────────────────
+function openUse(id){
+  const p = prompts.find(x=>x.id===id); if(!p) return;
+  curPrompt = p;
+  document.getElementById('useTitle').textContent = p.title;
+  document.getElementById('useBody').textContent = p.body;
+  const vars = extractVars(p.body);
+  const vsec = document.getElementById('useVarsSection');
+  const rsec = document.getElementById('useResultSection');
+  if(vars.length){
+    vsec.style.display='block';
+    rsec.style.display='block';
+    document.getElementById('useVarsList').innerHTML = vars.map(v=>
+      `<div class="var-input-row">
+        <span class="var-input-label">{{${v}}}</span>
+        <input class="var-input-field" id="vi_${v}" placeholder="Введи значение..." oninput="updateResult()">
+      </div>`).join('');
+    updateResult();
+  } else {
+    vsec.style.display='none';
+    rsec.style.display='none';
+  }
+  document.getElementById('copiedFlash').style.display='none';
+  openOv('useOv');
+}
+
+function updateResult(){
+  if(!curPrompt) return;
+  let result = curPrompt.body;
+  const vars = extractVars(curPrompt.body);
+  vars.forEach(v=>{
+    const val = document.getElementById('vi_'+v)?.value||'';
+    result = result.replace(new RegExp('\\{\\{'+v+'\\}\\}','g'), val||`{{${v}}}`);
+  });
+  document.getElementById('resultArea').textContent = result;
+}
+
+async function copyFinal(){
+  if(!curPrompt) return;
+  const vars = extractVars(curPrompt.body);
+  let text = curPrompt.body;
+  vars.forEach(v=>{
+    const val = document.getElementById('vi_'+v)?.value||'';
+    text = text.replace(new RegExp('\\{\\{'+v+'\\}\\}','g'), val||`{{${v}}}`);
+  });
+  try {
+    await navigator.clipboard.writeText(text);
+    document.getElementById('copiedFlash').style.display='block';
+    setTimeout(()=>{document.getElementById('copiedFlash').style.display='none';},2000);
+    await sbPatch('prompts',curPrompt.id,{use_count:(curPrompt.use_count||0)+1});
+    curPrompt.use_count=(curPrompt.use_count||0)+1;
+    renderPrompts();
+  } catch(e){ toast('❌ Не удалось скопировать'); }
+}
+
+// ── FOLDERS ───────────────────────────────────────────────
+function createFolder(){
+  const name = prompt('Название новой папки:');
+  if(!name||!name.trim()) return;
+  const n = name.trim();
+  if(!folders.includes(n)){ folders.push(n); renderFolders(); }
+  setFolder(n);
+}
+
+// ── UTILS ────────────────────────────────────────────────
+function openOv(id){document.getElementById(id).classList.add('open');}
+function closeOv(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.overlay').forEach(o=>{o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');});});
+
+function toggleSidebar(){document.getElementById('sidebar').classList.toggle('mob-open');}
+
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2500);}
+
+// show logo on desktop
+if(window.innerWidth>600) document.getElementById('desktopLogo').style.display='block';
+
+// ── PIN ─────────────────────────────────────────────────────
+let pinBuf='', pinStep=0, pinFirst='', PIN_HASH=null;
+
+async function sha256(str){
+  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+async function savePinHash(hash){
+  const ex=await sbGet('settings','key=eq.pv_pin');
+  if(ex.length) await sbPatch('settings','pv_pin',{value:hash,updated_at:new Date().toISOString()});
+  else await sbPost('settings',{key:'pv_pin',value:hash});
+  PIN_HASH=hash;
+}
+function updPinDots(cls){
+  for(let i=0;i<4;i++){
+    const d=document.getElementById('pd'+i);
+    d.style.background=i<pinBuf.length?(cls==='error'?'#ff5270':'#7b87ff'):'transparent';
+    d.style.borderColor=i<pinBuf.length?(cls==='error'?'#ff5270':'#5d6bff'):'#252a3a';
+  }
+}
+function pp(d){if(pinBuf.length>=4)return;pinBuf+=d;updPinDots();if(pinBuf.length===4)setTimeout(handlePin,120);}
+function pdel(){pinBuf=pinBuf.slice(0,-1);updPinDots();}
+async function handlePin(){
+  if(pinStep===1){pinFirst=pinBuf;pinBuf='';pinStep=2;document.getElementById('pinSub').textContent='Подтверди PIN';updPinDots();}
+  else if(pinStep===2){
+    if(pinBuf===pinFirst){
+      const h=await sha256(pinBuf);await savePinHash(h);
+      document.getElementById('pinScreen').style.display='none';
+    } else {pinErr('Коды не совпадают');pinStep=1;pinFirst='';pinBuf='';document.getElementById('pinSub').textContent='Создай PIN-код';}
+  } else {
+    const h=await sha256(pinBuf);
+    if(h===PIN_HASH){document.getElementById('pinScreen').style.display='none';}
+    else{pinErr('Неверный PIN');pinBuf='';}
+  }
+}
+function pinErr(msg){
+  updPinDots('error');
+  document.getElementById('pinHint').textContent=msg;
+  const dots=document.getElementById('pinDots');
+  dots.style.animation='shake 0.35s ease';
+  setTimeout(()=>{dots.style.animation='';updPinDots();pinBuf='';},400);
+}
+
+async function initPin(){
+  try{
+    const ex=await sbGet('settings','key=eq.pv_pin');
+    if(ex.length&&ex[0].value){
+      PIN_HASH=ex[0].value;
+      pinStep=0;
+      document.getElementById('pinSub').textContent='Введи PIN для входа';
+    } else {
+      pinStep=1;
+      document.getElementById('pinSub').textContent='Создай PIN-код';
+    }
+  } catch(e){
+    pinStep=1;
+    document.getElementById('pinSub').textContent='Создай PIN-код';
+  }
+}
+
+// Add shake animation
+const styleEl=document.createElement('style');
+styleEl.textContent='@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}';
+document.head.appendChild(styleEl);
+
+// Start with PIN then load data
+(async()=>{
+  await initPin();
+  await init();
+  // After data loaded, show PIN screen
+  document.getElementById('pinScreen').style.display='flex';
+})();
+
+</script>
+</body>
+</html>
