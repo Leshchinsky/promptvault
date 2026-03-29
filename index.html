@@ -1,0 +1,110 @@
+<!-- UPDATED: Supabase integrated version based on your UI -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+
+const supabase = window.supabase.createClient(
+  'https://xhhcclmwdxkkrrbqlkze.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhoaGNjbG13ZHhra3JyYnFsa3plIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NzE1MjgsImV4cCI6MjA5MDA0NzUyOH0.7Eyt-poMCD40psl96EPZ6U1Vo1i_JPv7pg1L5muvWcw'
+);
+
+// ==== OVERRIDE STORAGE LOGIC ====
+async function loadState() {
+  const { data } = await supabase
+    .from('prompts')
+    .select('*')
+    .order('updated_at', { ascending: false });
+
+  state.items = (data || []).map(x => ({
+    id: x.id,
+    title: x.title,
+    category: x.category,
+    language: x.language,
+    tags: x.tags || [],
+    notes: x.notes,
+    prompt: x.prompt,
+    favorite: x.favorite,
+    createdAt: x.created_at,
+    updatedAt: x.updated_at
+  }));
+
+  state.selectedId = state.items[0]?.id || null;
+}
+
+async function saveState() {
+  // DISABLED (Supabase now handles data)
+}
+
+// ==== CRUD ====
+
+async function savePrompt(event) {
+  event.preventDefault();
+
+  const payload = {
+    title: el.titleInput.value.trim(),
+    category: el.categoryInput.value.trim(),
+    language: el.languageInput.value.trim(),
+    tags: el.tagsInput.value.split(',').map(x => x.trim()).filter(Boolean),
+    notes: el.notesInput.value.trim(),
+    prompt: el.promptInput.value.trim(),
+    favorite: false
+  };
+
+  if (state.editingId) {
+    await supabase.from('prompts').update(payload).eq('id', state.editingId);
+  } else {
+    await supabase.from('prompts').insert(payload);
+  }
+
+  closeModal();
+  await loadState();
+  renderAll();
+}
+
+async function deletePrompt(id) {
+  await supabase.from('prompts').delete().eq('id', id);
+  await loadState();
+  renderAll();
+}
+
+async function toggleFavorite(id) {
+  const item = state.items.find(x => x.id === id);
+
+  await supabase
+    .from('prompts')
+    .update({ favorite: !item.favorite })
+    .eq('id', id);
+
+  await loadState();
+  renderAll();
+}
+
+async function duplicatePrompt(id) {
+  const item = state.items.find(x => x.id === id);
+
+  const copy = {
+    title: item.title + ' copy',
+    category: item.category,
+    language: item.language,
+    tags: item.tags,
+    notes: item.notes,
+    prompt: item.prompt,
+    favorite: false
+  };
+
+  await supabase.from('prompts').insert(copy);
+
+  await loadState();
+  renderAll();
+}
+
+// ==== INIT ====
+
+async function init() {
+  await loadState();
+  bindEvents();
+  renderAll();
+}
+
+init();
+
+</script>
